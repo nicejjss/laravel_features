@@ -21,8 +21,8 @@ Route::get('/', function () {
 });
 
 Route::get('/mail', function () {
-   Mail::to('locdaoduc2002@gmail.com')->send((new \App\Mail\MyMail())->onQueue('THIS_IS_MAIL_SHOULD_QUEUE'));
-   return 'ok';
+    Mail::to('locdaoduc2002@gmail.com')->send((new \App\Mail\MyMail()));
+    return 'ok';
 });
 
 Route::get('/cache', function () {
