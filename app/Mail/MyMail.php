@@ -16,6 +16,11 @@ class MyMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    private array $tryExceptions = [
+        'Division',
+        'exception',
+    ];
+
     /**
      * Create a new message instance.
      */
@@ -23,17 +28,6 @@ class MyMail extends Mailable
     {
         //
     }
-
-    // public function shouldQueue(): bool
-    // {
-    //     return false;
-    // }
-
-//    public function queue($queue = null)
-//    {
-//        return false;
-//    }
-
 
     /**
      * Get the message envelope.
@@ -47,19 +41,36 @@ class MyMail extends Mailable
 
     /**
      * @throws \Exception
+     * @throws Throwable
      */
     public function send($mailer)
     {
-        $tries = 3;
-        while($tries) {
+        $tries = 1;
+        $maxTries = 3;
+
+        while ($tries <= 3) {
             try {
-                throw new Exception("Some error occurred.");
+                $a = 1 / 0;
+
                 parent::send($mailer);
-                Log::info('Send Success');
                 break;
             } catch (Throwable $e) {
-                Log::info($e->getMessage() . 123);
-                --$tries;
+                $isRetryException = false;
+
+                foreach ($this->tryExceptions as $tryException) {
+                    if (str_contains($e->getMessage(), $tryException)) {
+                        $isRetryException = true;
+                        break;
+                    }
+                }
+
+                if ($isRetryException && $tries < $maxTries) {
+                    logger()->error('Failed time ' . $tries . ' ' . $e->getMessage());
+                    ++$tries;
+                    sleep(1);
+                } else {
+                    throw $e;
+                }
             }
         }
     }
