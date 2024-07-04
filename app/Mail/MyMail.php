@@ -3,12 +3,14 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Mockery\Exception;
 use Throwable;
 
@@ -45,34 +47,7 @@ class MyMail extends Mailable
      */
     public function send($mailer)
     {
-        $tries = 1;
-        $maxTries = 3;
-
-        while ($tries <= 3) {
-            try {
-                $a = 1 / 0;
-
-                parent::send($mailer);
-                break;
-            } catch (Throwable $e) {
-                $isRetryException = false;
-
-                foreach ($this->tryExceptions as $tryException) {
-                    if (str_contains($e->getMessage(), $tryException)) {
-                        $isRetryException = true;
-                        break;
-                    }
-                }
-
-                if ($isRetryException && $tries < $maxTries) {
-                    logger()->error('Failed time ' . $tries . ' ' . $e->getMessage());
-                    ++$tries;
-                    sleep(1);
-                } else {
-                    throw $e;
-                }
-            }
-        }
+        $this->sendmail($mailer);
     }
 
     /**
@@ -83,6 +58,38 @@ class MyMail extends Mailable
         return new Content(
             view: 'mail.test',
         );
+    }
+
+    private function sendMail(Mailer $mailer, int $tried = 1): void
+    {
+        $maxTries = 3;
+
+        try {
+            parent::send($mailer);
+
+        } catch (Throwable $e) {
+            $message = $e->getMessage();
+            $isRetryException = $this->isRetryException($message);
+
+            if ($isRetryException && $tried < $maxTries) {
+                ++$tried;
+                sleep(1);
+                $this->sendMail($mailer, $tried);
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    private function isRetryException(string $message): bool
+    {
+        foreach ($this->tryExceptions as $tryException) {
+            if (Str::contains($message, $tryException)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
