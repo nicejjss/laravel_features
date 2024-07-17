@@ -3,18 +3,25 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Mockery\Exception;
 use Throwable;
 
 class MyMail extends Mailable
 {
     use Queueable, SerializesModels;
+
+    private array $tryExceptions = [
+        'Division',
+        'exception',
+    ];
 
     /**
      * Create a new message instance.
@@ -23,17 +30,6 @@ class MyMail extends Mailable
     {
         //
     }
-
-    // public function shouldQueue(): bool
-    // {
-    //     return false;
-    // }
-
-//    public function queue($queue = null)
-//    {
-//        return false;
-//    }
-
 
     /**
      * Get the message envelope.
@@ -47,21 +43,11 @@ class MyMail extends Mailable
 
     /**
      * @throws \Exception
+     * @throws Throwable
      */
     public function send($mailer)
     {
-        $tries = 3;
-        while($tries) {
-            try {
-                throw new Exception("Some error occurred.");
-                parent::send($mailer);
-                Log::info('Send Success');
-                break;
-            } catch (Throwable $e) {
-                Log::info($e->getMessage() . 123);
-                --$tries;
-            }
-        }
+        $this->sendmail($mailer);
     }
 
     /**
@@ -72,6 +58,38 @@ class MyMail extends Mailable
         return new Content(
             view: 'mail.test',
         );
+    }
+
+    private function sendMail(Mailer $mailer, int $tried = 1): void
+    {
+        $maxTries = 3;
+
+        try {
+            parent::send($mailer);
+
+        } catch (Throwable $e) {
+            $message = $e->getMessage();
+            $isRetryException = $this->isRetryException($message);
+
+            if ($isRetryException && $tried < $maxTries) {
+                ++$tried;
+                sleep(1);
+                $this->sendMail($mailer, $tried);
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    private function isRetryException(string $message): bool
+    {
+        foreach ($this->tryExceptions as $tryException) {
+            if (Str::contains($message, $tryException)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
