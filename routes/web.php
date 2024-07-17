@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 
 /*
@@ -17,7 +18,13 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+// Assuming your string is stored in a variable called $s3Url
+    $s3Url = 's3://dr-dev-video-public-bucket/endirect/videos/out/video/video/1605/9f76b01d-b529-4d3b-a253-53d50642589a.m3u8';
+
+// Extract the desired substring
+    $substring = Str::substr($s3Url, strrpos($s3Url, '/') + 1);
+
+    echo $substring;
 });
 
 Route::get('/mail', function () {
