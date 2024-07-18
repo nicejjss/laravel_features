@@ -31,7 +31,8 @@ class AuthServiceProvider extends ServiceProvider
             // Return an instance of Illuminate\Contracts\Auth\Guard...
             return new CustomGuard(
                 new CustomProvider($app['config']['auth.providers.' . $config['provider']]['model']),
-                $app['request']
+                $app['request'],
+                $app['request']->get('token')
             );
         });
     }

@@ -40,7 +40,7 @@ class CustomProvider implements UserProvider
 
     public function retrieveByCredentials(array $credentials)
     {
-        return $this->model->where($credentials)->dd()->first();
+        return $this->model->where($credentials)->select(['id', 'name', 'email'])->first()->toArray();
     }
 
     public function validateCredentials(Authenticatable $user, array $credentials)
