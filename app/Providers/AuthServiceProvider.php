@@ -29,7 +29,10 @@ class AuthServiceProvider extends ServiceProvider
     {
         Auth::extend('custom', function (Application $app, string $name, array $config) {
             // Return an instance of Illuminate\Contracts\Auth\Guard...
-            return new CustomGuard(new CustomProvider(app(User::class)));
+            return new CustomGuard(
+                new CustomProvider($app['config']['auth.providers.' . $config['provider']]['model']),
+                $app['request']
+            );
         });
     }
 }

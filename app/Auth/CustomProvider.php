@@ -2,22 +2,30 @@
 
 namespace App\Auth;
 
-use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
+use Illuminate\Database\Eloquent\Model;
 
 class CustomProvider implements UserProvider
 {
-    private User $user;
+    private Model|string $model;
 
-    public function __construct(User $user)
+    public function __construct(string $model)
     {
-        $this->user = $user;
+        $this->model = $model;
+        $this->createModel();
+    }
+
+    private function createModel()
+    {
+        $class = '\\'.ltrim($this->model, '\\');
+
+        return $this->model = new $class;
     }
 
     public function retrieveById($identifier)
     {
-         return $this->user->where('id', $identifier)->first();
+         return $this->model->where('id', $identifier)->first();
     }
 
     public function retrieveByToken($identifier, $token)
@@ -32,8 +40,7 @@ class CustomProvider implements UserProvider
 
     public function retrieveByCredentials(array $credentials)
     {
-        return $this->user->where($credentials)->first();
-        // TODO: Implement retrieveByCredentials() method.
+        return $this->model->where($credentials)->dd()->first();
     }
 
     public function validateCredentials(Authenticatable $user, array $credentials)

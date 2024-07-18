@@ -11,7 +11,7 @@ class Authentication
 {
     public function handle(Request $request, Closure $next): Response
     {
-        Auth::check($request->getPayload()->all());
+        Auth::attempt($request->getPayload()->all());
         return $next($request);
     }
 }
