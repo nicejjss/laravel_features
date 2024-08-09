@@ -22,12 +22,11 @@ class CustomGuard implements Guard
 
     public function __construct(
         UserProvider $provider,
-        Request $request,
-        string $token = null  // add token for authentication
+        Request $request // add token for authentication
     ) {
         $this->request = $request;
         $this->provider = $provider;
-        $this->token = $token;
+        $this->token = $this->request->get('token');
     }
 
     public function attempt()
@@ -38,7 +37,7 @@ class CustomGuard implements Guard
                 $this->user = $this->provider->retrieveByCredentials($info);
 
                 if ($this->user) {
-                    return Cache::remember(md5($this->token), 3600 * 24,function () use ($info) {
+                    return Cache::remember(md5($this->token), 5,function () {
                         return $this->user;
                     });
                 }
@@ -57,6 +56,7 @@ class CustomGuard implements Guard
 
     public function validate(array $credentials = [])
     {
+        Log::info('Start Validation');
         // TODO: Implement validate() method.
     }
 }
